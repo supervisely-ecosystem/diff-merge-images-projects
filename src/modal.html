@@ -1,0 +1,16 @@
+<div class="fflex" style="justify-content: space-between;">
+    <sly-field title="Input Project #1" description="Choose project to compare">
+            <sly-icon slot="icon" :options="{ color: '#2cd26e', bgColor: '#d8f8e7', rounded: false }">
+                <i class="zmdi zmdi-collection-folder-image"></i>
+            </sly-icon>
+            <sly-select-team-workspace :team-id.sync="state.teamId1" :workspace-id.sync="state.workspaceId1"/>
+            <sly-select-project :workspace-id="state.workspaceId1" :project-id.sync="state.projectId1" />
+    </sly-field>
+        <sly-field title="Input Project #2" description="Choose project to compare">
+            <sly-icon slot="icon" :options="{ color: '#2cd26e', bgColor: '#d8f8e7', rounded: false }">
+                <i class="zmdi zmdi-collection-folder-image"></i>
+            </sly-icon>
+            <sly-select-team-workspace :team-id.sync="state.teamId2" :workspace-id.sync="state.workspaceId2"/>
+            <sly-select-project :workspace-id="state.workspaceId2" :project-id.sync="state.projectId2" />
+    </sly-field>
+</div>

@@ -1,0 +1,127 @@
+<div>
+    <div class="fflex" style="align-items: stretch">
+        <sly-card title="Input Project #1" style="width: 33%" class="mr15">
+            <sly-field title="" description="Project">
+                <a slot="title" target="_blank"
+                   :href="`/projects/${data.projectId1}/datasets`">{{data.projectName1}}</a>
+                <sly-icon slot="icon" :options="{ imageUrl: `${data.projectPreviewUrl1}` }"/>
+            </sly-field>
+        </sly-card>
+
+        <sly-card title="Result project" style="width: 34%" class="mr15">
+            <div class="fflex">
+                <el-button
+                        :disabled="state.resultProjectName.length === 0"
+                        type="primary"
+                        @click="command('merge')"
+                        v-if="!data.createdProjectName"
+                >
+                    <i class="zmdi zmdi-play" style="margin-right: 5px"></i> Run
+                </el-button>
+                <div class="ml5" v-if="state.resultProjectName.length === 0" style="color: red"> Define project name</div>
+            </div>
+            <sly-field v-if="data.createdProjectName" title="" description="Project">
+                <a slot="title" target="_blank"
+                   :href="`/projects/${data.createdProjectId}/datasets`">{{data.createdProjectName}}</a>
+                <sly-icon slot="icon" :options="{ color: '#2cd26e', bgColor: '#d8f8e7', rounded: false }">
+                    <i class="zmdi zmdi-collection-folder-image"></i>
+                </sly-icon>
+            </sly-field>
+        </sly-card>
+
+        <sly-card title="Input Project #2" style="width: 33%">
+            <sly-field title="" description="Project">
+                <a slot="title" target="_blank"
+                   :href="`/projects/${data.projectId2}/datasets`">{{data.projectName2}}</a>
+                <sly-icon slot="icon" :options="{ imageUrl: `${data.projectPreviewUrl2}` }"/>
+            </sly-field>
+        </sly-card>
+    </div>
+
+    <div v-for="card in data.cards">
+        <sly-card class="mt15" :title="card.name" :subtitle="card.description">
+            <el-table class="ultra-table" :data="card.table" style="width: 100%">
+                <el-table-column sortable prop="name1" :label="`Project 1: ${card.columnSuffix}`">
+                    <template scope="scope">
+                        <div v-if="scope.row.name1">
+                            <i class="zmdi zmdi-circle" :style="{color: scope.row.color1}"></i>
+                            <span class="mr10 ml10">{{ scope.row.name1 }}</span>
+                            <span style="color: #7f858e;"><i
+                                    :class="scope.row.shapeIcon1"></i> {{ scope.row.shape1 }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="info" label="Compare">
+                    <template scope="scope">
+                        <div :style="{color: scope.row.infoColor}">
+                        <span style="width: 25px; display: inline-block">
+                                <i v-for="icon in scope.row.infoIcon" :class="icon"></i>
+                        </span>
+                            <span class="mr10 ml10">{{ scope.row.infoMessage }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column sortable prop="name2" :label="`Project 2: ${card.columnSuffix}`">
+                    <template scope="scope">
+                        <div v-if="scope.row.name2">
+                            <i class="zmdi zmdi-circle" :style="{color: scope.row.color2}"></i>
+                            <span class="mr10 ml10">{{ scope.row.name2 }}</span>
+                            <span style="color: #7f858e;"><i
+                                    :class="scope.row.shapeIcon2"></i> {{ scope.row.shape2 }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </sly-card>
+    </div>
+
+    <sly-card class="mt15" title="Settings" subtitle="Define merge options">
+        <sly-field title="How to merge" description="unify or intersect">
+            <sly-icon slot="icon" :options="{ color: '#ceadff', bgColor: '#f6ebff', rounded: false }">
+                <i class="zmdi zmdi-compare"></i>
+            </sly-icon>
+            <div class="fflex">
+                <div style="width: 70px">Classes:</div>
+                <el-select v-model="state.mergeClasses">
+                    <el-option v-for="item in data.mergeClassesOptions" :key="item" :label="item"
+                               :value="item"></el-option>
+                </el-select>
+            </div>
+            <div class="fflex mt10">
+                <div style="width: 70px">Tags:</div>
+                <el-select v-model="state.mergeTags">
+                    <el-option v-for="item in data.mergeTagsOptions" :key="item" :label="item"
+                               :value="item"></el-option>
+                </el-select>
+            </div>
+        </sly-field>
+        <sly-field class="mt15" title="How to resolve conflicts" description="skip / use left / use right">
+            <sly-icon slot="icon" :options="{ color: '#ff7070', bgColor: '#ffdbdb', rounded: false }">
+                <i class="zmdi zmdi-alert-octagon"></i>
+            </sly-icon>
+            <div class="fflex">
+                <div style="width: 70px">Classes:</div>
+                <el-select v-model="state.resolveClasses">
+                    <el-option v-for="item in data.resolveClassesOptions" :key="item" :label="item"
+                               :value="item"></el-option>
+                </el-select>
+            </div>
+            <div class="fflex mt10">
+                <div style="width: 70px">Tags:</div>
+                <el-select v-model="state.resolveTags">
+                    <el-option v-for="item in data.resolveTagsOptions" :key="item" :label="item"
+                               :value="item"></el-option>
+                </el-select>
+            </div>
+        </sly-field>
+        <sly-field title="Result project" description="Empty project will be created with merged classes and tags">
+            <sly-icon slot="icon" :options="{ color: '#2cd26e', bgColor: '#d8f8e7', rounded: false }">
+                <i class="zmdi zmdi-collection-folder-image"></i>
+            </sly-icon>
+            <sly-select-team-workspace :team-id.sync="state.teamId" :workspace-id.sync="state.workspaceId"/>
+            <div class="mt10 mb5">Result project name:</div>
+            <el-input placeholder="Please input result project name" v-model="state.resultProjectName"></el-input>
+        </sly-field>
+    </sly-card>
+
+</div>
