@@ -39,7 +39,7 @@
         </sly-card>
     </div>
 
-    <sly-card class="mt15" title="Compare Datasets" subtitle="Click on the numbers to see corresponding images">
+    <sly-card class="mt15" title="Compare Datasets" subtitle="Click on number to preview images">
         <el-table class="ultra-table"
                   :data="data.table"
                   style="width: 100%"
@@ -113,7 +113,7 @@
 <!--    <pre>{{state.click}}</pre>-->
     <sly-card class="mt15"
               title="Images"
-              subtitle="Click on number in comparison table to see corresponding images">
+              subtitle="Click on number in 'Compare Datasets' table to preview images">
 <!--        <div v-if="state.click">Selected left/right: {{state.click.left.name}} / {{state.click.right.name}}</div>-->
         <div class="mt5" v-if="state.click" :style="{color: state.click.color[state.clickIndex]}">
             <i v-for="icon in state.click.icon[state.clickIndex]" :class="icon"></i>
