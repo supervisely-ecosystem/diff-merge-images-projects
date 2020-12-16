@@ -110,7 +110,6 @@ def init_ui(api: sly.Api, task_id, app_logger):
         # "resolveTagsOptions": ["skip tag", "use left", "use right"],
         # "createdProjectId": None,
         # "createdProjectName": None
-        "clickedName": ""
     }
     state = {
         "mergeClasses": "unify",
@@ -119,7 +118,8 @@ def init_ui(api: sly.Api, task_id, app_logger):
         "resolveTags": "skip tag",
         "resultProjectName": "merged project",
         "teamId": TEAM_ID,
-        "workspaceId": WORKSPACE_ID
+        "workspaceId": WORKSPACE_ID,
+        "clickedName": None
     }
     return data, state
 

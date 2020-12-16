@@ -93,10 +93,29 @@
 
         <br/>
         <br/>
-        <div class="mt5"><span style="color: green">matched</span> - images have the same names and same content</div>
-        <div class="mt5"><span style="color: red">conflicts</span> - images have the same names but different content</div>
-        <div class="mt5"><span style="color: #20a0ff">unique</span> - images only present in one dataset</div>
+        <div class="mt5"><i class="zmdi zmdi-map mr5" style="width: 15px; display: inline-block"></i>Legend:</div>
+        <div class="mt5">
+            <span style="color: green"><i class="zmdi zmdi-check mr5" style="width: 15px; display: inline-block"></i>matched</span>
+            - images have same names and same content
+        </div>
+        <div class="mt5">
+            <span style="color: red"><i class="zmdi zmdi-close mr5" style="width: 15px; display: inline-block"></i>conflicts</span>
+            - images have same names but different content
+        </div>
+        <div class="mt5">
+            <span style="color: #20a0ff"><i class="zmdi zmdi-plus-circle-o mr5" style="width: 15px; display: inline-block"></i>unique</span>
+            - images only present in one dataset
+        </div>
 
     </sly-card>
-    {{data.clickedName}}
+    {{state.clickedName}}
+    <sly-card class="mt15"
+              title="Images"
+              subtitle="Click on number in comparison table to see corresponding images"
+    >
+        <sly-table v-if="data.clickedName"
+                   :options="{perPage: 10, pageSizes: [10, 20, 50, 100]}"
+                   :content='data.cellToImages'
+        ></sly-table>
+    </sly-card>
 </div>
