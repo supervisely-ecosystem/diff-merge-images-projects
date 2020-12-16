@@ -18,79 +18,65 @@ META2: sly.ProjectMeta = None
 CLASSES_INFO = None
 TAGS_INFO = None
 
+RESULTS = []
 
-def process_items(collection1, collection2, diff_msg="Shape conflict"):
-    items1 = {item.name: 1 for item in collection1}
-    items2 = {item.name: 1 for item in collection2}
-    names = items1.keys() | items2.keys()
-    mutual = items1.keys() & items2.keys()
-    diff1 = items1.keys() - mutual
-    diff2 = items2.keys() - mutual
 
-    match = []
-    differ = []
-    missed = []
+def process_items(ds_info1, collection1, ds_info2, collection2):
+    ds_names = ds_info1.keys() | ds_info2.keys()
 
-    def set_info(d, index, meta):
-        d[f"name{index}"] = meta.name
-        d[f"color{index}"] = sly.color.rgb2hex(meta.color)
-        if type(meta) is sly.ObjClass:
-            d[f"shape{index}"] = meta.geometry_type.geometry_name()
-            d[f"shapeIcon{index}"] = "zmdi zmdi-shape"
-        else:
-            meta: sly.TagMeta
-            d[f"shape{index}"] = meta.value_type
-            d[f"shapeIcon{index}"] = "zmdi zmdi-label"
-
-    for name in names:
+    results = []
+    results_data = []
+    for name in ds_names:
         compare = {}
-        meta1 = collection1.get(name)
-        if meta1 is not None:
-            set_info(compare, 1, meta1)
-        meta2 = collection2.get(name)
-        if meta2 is not None:
-            set_info(compare, 2, meta2)
+        images1 = collection1.get(name, [])
+        images2 = collection2.get(name, [])
+        if len(images1) == 0:
+            compare["infoMessage"] = ["Not found in Project #1"]
+            compare["infoIcon"] = [["zmdi zmdi-long-arrow-left", "zmdi zmdi-alert-circle-o"]]
+            compare["color"] = ["#F39C12"]
+            compare["left"] = None
+            compare["right"] = {"name": name, "count": len(images2)}
+            continue
+        if len(images2) == 0:
+            compare["infoMessage"] = ["Not found in Project #2"]
+            compare["infoIcon"] = [["zmdi zmdi-alert-circle-o", "zmdi zmdi-long-arrow-right"]]
+            compare["color"] = ["#F39C12"]
+            compare["left"] = {"name": name, "count": len(images1)}
+            compare["right"] = None
+            continue
 
-        compare["infoMessage"] = "Match"
-        compare["infoColor"] = "green"
-        if name in mutual:
-            flag = True
-            if type(meta1) is sly.ObjClass and meta1.geometry_type != meta2.geometry_type:
-                flag = False
-            if type(meta1) is sly.TagMeta:
-                meta1: sly.TagMeta
-                meta2: sly.TagMeta
-                if meta1.value_type != meta2.value_type:
-                    flag = False
-                if meta1.value_type == sly.TagValueType.ONEOF_STRING:
-                    if set(meta1.possible_values) != set(meta2.possible_values):
-                        diff_msg = "Type OneOf: conflict of possible values"
-                    flag = False
+        img_dict1 = {img_info.name: img_info for img_info in images1}
+        img_dict2 = {img_info.name: img_info for img_info in images2}
 
-            if flag is False:
-                compare["infoMessage"] = diff_msg
-                compare["infoColor"] = "red"
-                compare["infoIcon"] = ["zmdi zmdi-close"],
-                differ.append(compare)
-            else:
-                compare["infoIcon"] = ["zmdi zmdi-check"],
-                match.append(compare)
-        else:
-            if name in diff1:
-                compare["infoMessage"] = "Not found in Project #2"
-                compare["infoIcon"] = ["zmdi zmdi-alert-circle-o", "zmdi zmdi-long-arrow-right"]
-                compare["iconPosition"] = "right"
-            else:
-                compare["infoMessage"] = "Not found in Project #1"
-                compare["infoIcon"] = ["zmdi zmdi-long-arrow-left", "zmdi zmdi-alert-circle-o"]
-            compare["infoColor"] = "#FFBF00"
-            missed.append(compare)
+        matched = []
+        diff = []  # same names but different hashes or image sizes
+        same_names = img_dict1.keys() & img_dict2.keys()
+        for img_name in same_names:
+            dest = matched if img_dict1[img_name].hash == img_dict2[img_name].hash else diff
+            dest.append((img_dict1[img_name], img_dict2[img_name]))
 
-    table = []
-    table.extend(match)
-    table.extend(differ)
-    table.extend(missed)
-    return table, match, differ, missed
+        uniq1 = [img_dict1[name] for name in img_dict1.keys() - same_names]
+        uniq2 = [img_dict2[name] for name in img_dict2.keys() - same_names]
+
+        compare["message"] = ["matched", "conflicts", "unique (in left)", "unique (in right)"]
+        compare["icon"] = [["zmdi zmdi-check"], ["zmdi zmdi-close"], ["zmdi zmdi-plus-circle-o"], ["zmdi zmdi-plus-circle-o"]]
+        compare["color"] = ["green", "red", "#20a0ff", "#20a0ff"]
+        compare["numbers"] = [len(matched), len(diff), len(uniq1), len(uniq2)]
+        compare["left"] = {"name": name, "count": len(images1)}
+        compare["right"] = {"name": name, "count": len(images2)}
+
+        results.append(compare)
+
+    return results
+
+
+def _get_all_images(api: sly.Api, project):
+    ds_info = {}
+    ds_images = {}
+    for dataset in api.dataset.get_list(project.id):
+        ds_info[dataset.name] = dataset
+        ds_images[dataset.name] = api.image.get_list(dataset.id)
+    return ds_info, ds_images
 
 
 def init_ui(api: sly.Api, task_id, app_logger):
@@ -105,13 +91,10 @@ def init_ui(api: sly.Api, task_id, app_logger):
     META1 = sly.ProjectMeta.from_json(api.project.get_meta(PROJECT_ID1))
     META2 = sly.ProjectMeta.from_json(api.project.get_meta(PROJECT_ID2))
 
-    return
+    ds_info1, ds_images1 = _get_all_images(api, PROJECT1)
+    ds_info2, ds_images2 = _get_all_images(api, PROJECT2)
 
-    classes_table, match_cls, differ_cls, missed_cls = process_items(META1.obj_classes, META2.obj_classes)
-    CLASSES_INFO = [match_cls, differ_cls, missed_cls]
-
-    tags_table, match_tag, differ_tag, missed_tag = process_items(META1.tag_metas, META2.tag_metas, diff_msg="Type conflict")
-    TAGS_INFO = [match_tag, differ_tag, missed_tag]
+    result = process_items(ds_info1, ds_images1, ds_info2, ds_images2)
 
     data = {
         "projectId1": PROJECT1.id,
@@ -120,26 +103,14 @@ def init_ui(api: sly.Api, task_id, app_logger):
         "projectId2": PROJECT2.id,
         "projectName2": PROJECT2.name,
         "projectPreviewUrl2": api.image.preview_url(PROJECT2.reference_image_url, 100, 100),
-        "cards": [
-            {
-                "table": classes_table,
-                "name": "Compare Classes",
-                "description": "Classes colors are ignored",
-                "columnSuffix": "classes"
-            },
-            {
-                "table": tags_table,
-                "name": "Compare Tags",
-                "description": "Tags colors are ignored",
-                "columnSuffix": "tags"
-            }
-        ],
-        "mergeClassesOptions": ["unify", "intersect"],
-        "mergeTagsOptions": ["unify", "intersect"],
-        "resolveClassesOptions": ["skip class", "use left", "use right"],
-        "resolveTagsOptions": ["skip tag", "use left", "use right"],
-        "createdProjectId": None,
-        "createdProjectName": None
+        "table": result,
+        # "mergeClassesOptions": ["unify", "intersect"],
+        # "mergeTagsOptions": ["unify", "intersect"],
+        # "resolveClassesOptions": ["skip class", "use left", "use right"],
+        # "resolveTagsOptions": ["skip tag", "use left", "use right"],
+        # "createdProjectId": None,
+        # "createdProjectName": None
+        "clickedName": ""
     }
     state = {
         "mergeClasses": "unify",
@@ -154,24 +125,28 @@ def init_ui(api: sly.Api, task_id, app_logger):
 
 
 def _merge(items_info, collection1, collection2, merge_option, resolve):
-    res = []
-    matched_items, conflict_items, missed_items = items_info
-    for info in matched_items:
-        res.append(collection1.get(info["name1"]))
-    if merge_option == "unify":
-        for info in conflict_items:
-            if "skip" in resolve:
-                continue
-            elif resolve == "use left":
-                res.append(collection1.get(info["name1"]))
-            elif resolve == "use right":
-                res.append(collection2.get(info["name2"]))
-        for info in missed_items:
-            if "name1" in info:
-                res.append(collection1.get(info["name1"]))
-            else:
-                res.append(collection2.get(info["name2"]))
-    return res
+    pass
+    # res = []
+    # matched_items, conflict_items, missed_items = items_info
+    # for info in matched_items:
+    #     res.append(collection1.get(info["name1"]))
+    # if merge_option == "unify":
+    #     for info in conflict_items:
+    #         if "skip" in resolve:
+    #             continue
+    #         elif resolve == "use left":
+    #             res.append(collection1.get(info["name1"]))
+    #         elif resolve == "use right":
+    #             res.append(collection2.get(info["name2"]))
+    #     for info in missed_items:
+    #         if "name1" in info:
+    #             res.append(collection1.get(info["name1"]))
+    #         else:
+    #             res.append(collection2.get(info["name2"]))
+    # return res
+
+def compare():
+    pass
 
 
 @my_app.callback("merge")
@@ -197,7 +172,6 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
         {"field": "data.createdProjectId", "payload": res_project.id},
         {"field": "data.createdProjectName", "payload": res_project.name},
     ]
-
     api.app.set_fields(task_id, fields)
     app_logger.info("Project is created", extra={'project_id': res_project.id, 'project_name': res_project.name})
     #api.task.set_output_project(task_id, res_project.id, res_project.name)
@@ -210,7 +184,6 @@ def main():
         "WORKSPACE_ID": WORKSPACE_ID,
     })
     data, state = init_ui(my_app.public_api, my_app.task_id, my_app.logger)
-    return
     my_app.run(data=data, state=state)
 
 
