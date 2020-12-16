@@ -105,6 +105,8 @@ def init_ui(api: sly.Api, task_id, app_logger):
     META1 = sly.ProjectMeta.from_json(api.project.get_meta(PROJECT_ID1))
     META2 = sly.ProjectMeta.from_json(api.project.get_meta(PROJECT_ID2))
 
+    return
+
     classes_table, match_cls, differ_cls, missed_cls = process_items(META1.obj_classes, META2.obj_classes)
     CLASSES_INFO = [match_cls, differ_cls, missed_cls]
 
@@ -208,10 +210,9 @@ def main():
         "WORKSPACE_ID": WORKSPACE_ID,
     })
     data, state = init_ui(my_app.public_api, my_app.task_id, my_app.logger)
+    return
     my_app.run(data=data, state=state)
 
 
-#@TODO: readme - project custom data
-#@TODO: readme - default res team/workspace == current
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
