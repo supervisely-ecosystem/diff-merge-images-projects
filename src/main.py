@@ -31,39 +31,41 @@ def process_items(ds_info1, collection1, ds_info2, collection2):
         images1 = collection1.get(name, [])
         images2 = collection2.get(name, [])
         if len(images1) == 0:
-            compare["infoMessage"] = ["Not found in Project #1"]
-            compare["infoIcon"] = [["zmdi zmdi-long-arrow-left", "zmdi zmdi-alert-circle-o"]]
+            compare["message"] = ["new dataset (in right)"]
+            #compare["icon"] = [["zmdi zmdi-long-arrow-left", "zmdi zmdi-alert-circle-o"]]
+            compare["icon"] = [["zmdi zmdi-folder-outline"]]
             compare["color"] = ["#F39C12"]
-            compare["left"] = None
+            compare["numbers"] = [-1]
+            compare["left"] = {"name": ""}
             compare["right"] = {"name": name, "count": len(images2)}
-            continue
-        if len(images2) == 0:
-            compare["infoMessage"] = ["Not found in Project #2"]
-            compare["infoIcon"] = [["zmdi zmdi-alert-circle-o", "zmdi zmdi-long-arrow-right"]]
+        elif len(images2) == 0:
+            compare["message"] = ["new dataset (in left)"]
+            #compare["infoIcon"] = [["zmdi zmdi-alert-circle-o", "zmdi zmdi-long-arrow-right"]]
+            compare["icon"] = [["zmdi zmdi-folder-outline"]]
             compare["color"] = ["#F39C12"]
+            compare["numbers"] = [-1]
             compare["left"] = {"name": name, "count": len(images1)}
-            compare["right"] = None
-            continue
+            compare["right"] = {"name": ""}
+        else:
+            img_dict1 = {img_info.name: img_info for img_info in images1}
+            img_dict2 = {img_info.name: img_info for img_info in images2}
 
-        img_dict1 = {img_info.name: img_info for img_info in images1}
-        img_dict2 = {img_info.name: img_info for img_info in images2}
+            matched = []
+            diff = []  # same names but different hashes or image sizes
+            same_names = img_dict1.keys() & img_dict2.keys()
+            for img_name in same_names:
+                dest = matched if img_dict1[img_name].hash == img_dict2[img_name].hash else diff
+                dest.append((img_dict1[img_name], img_dict2[img_name]))
 
-        matched = []
-        diff = []  # same names but different hashes or image sizes
-        same_names = img_dict1.keys() & img_dict2.keys()
-        for img_name in same_names:
-            dest = matched if img_dict1[img_name].hash == img_dict2[img_name].hash else diff
-            dest.append((img_dict1[img_name], img_dict2[img_name]))
+            uniq1 = [img_dict1[name] for name in img_dict1.keys() - same_names]
+            uniq2 = [img_dict2[name] for name in img_dict2.keys() - same_names]
 
-        uniq1 = [img_dict1[name] for name in img_dict1.keys() - same_names]
-        uniq2 = [img_dict2[name] for name in img_dict2.keys() - same_names]
-
-        compare["message"] = ["matched", "conflicts", "unique (in left)", "unique (in right)"]
-        compare["icon"] = [["zmdi zmdi-check"], ["zmdi zmdi-close"], ["zmdi zmdi-plus-circle-o"], ["zmdi zmdi-plus-circle-o"]]
-        compare["color"] = ["green", "red", "#20a0ff", "#20a0ff"]
-        compare["numbers"] = [len(matched), len(diff), len(uniq1), len(uniq2)]
-        compare["left"] = {"name": name, "count": len(images1)}
-        compare["right"] = {"name": name, "count": len(images2)}
+            compare["message"] = ["matched", "conflicts", "unique (in left)", "unique (in right)"]
+            compare["icon"] = [["zmdi zmdi-check"], ["zmdi zmdi-close"], ["zmdi zmdi-plus-circle-o"], ["zmdi zmdi-plus-circle-o"]]
+            compare["color"] = ["green", "red", "#20a0ff", "#20a0ff"]
+            compare["numbers"] = [len(matched), len(diff), len(uniq1), len(uniq2)]
+            compare["left"] = {"name": name, "count": len(images1)}
+            compare["right"] = {"name": name, "count": len(images2)}
 
         results.append(compare)
 
