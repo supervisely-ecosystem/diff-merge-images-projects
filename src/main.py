@@ -389,6 +389,7 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
     my_app.stop()
 
 
+#@TODO disable v-model components
 def main():
     sly.logger.info("Script arguments", extra={
         "TEAM_ID": TEAM_ID,
