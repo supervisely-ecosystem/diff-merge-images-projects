@@ -1,7 +1,7 @@
 <div align="center" markdown>
-<img src="https://i.imgur.com/VQSbsqa.png"/>
+<img src="https://i.imgur.com/vfDDYqh.png"/>
 
-# Diff Merge Project Meta
+# Diff Merge Two Images Projects
 
 <p align="center">
   <a href="#Overview">Overview</a> •
@@ -9,46 +9,33 @@
 </p>
 
 
-[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/diff-merge-project-meta)
+[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/diff-merge-images-projects)
 [![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/diff-merge-project-meta)
-[![views](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/diff-merge-project-meta&counter=views&label=views)](https://supervise.ly)
-[![used by teams](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/diff-merge-project-meta&counter=downloads&label=used%20by%20teams)](https://supervise.ly)
-[![runs](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/diff-merge-project-meta&counter=runs&label=runs)](https://supervise.ly)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/diff-merge-images-projects)
+[![views](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/diff-merge-images-projects&counter=views&label=views)](https://supervise.ly)
+[![used by teams](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/diff-merge-images-projects&counter=downloads&label=used%20by%20teams)](https://supervise.ly)
+[![runs](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/diff-merge-images-projects&counter=runs&label=runs)](https://supervise.ly)
 
 </div>
 
 ## Overview
 
-Visually compare projects meta: tags and classes. Define how to merge them and how to resolve conflicts. New empty project will be created with merged classes and tags. Then you can use `Diff Merge Projects` app to merge images and annotations and place them to the project created by this application.
+Visually compare and merge two images projects: datasets / images / image tags / labels / image metadata. Define how to merge them and how to resolve conflicts. 
 
-<img src="https://i.imgur.com/qjCJL5F.png"/>
+<img src="https://i.imgur.com/qTnXLaC.png"/>
 
 ## How To Use
 
 **Step 1:** Add app to your team from Ecosystem if it is not there
 
-**Step 2:** Run app from the `Apps` page of current team
+**Step 2:** Please, firstly use [`Diff Merge Project Meta`](https://ecosystem.supervise.ly/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
 
-<img src="https://i.imgur.com/QRYME1U.png" width="500px"/>
+**Step 2:** Run app from the `Apps` page of current team. Choose two projects to compare and merge
 
-**Step 3:** Explore comparison tables, define merge options and press `Run` button.
+<img src="https://i.imgur.com/WkLZ05w.png" width="500px"/>
 
-**Step 4:** New project is created. Information about input projects is saved in `custom data` of created project. For example:
+**Step 3:** Explore comparison table, define merge options and press `Run` button.
 
-```json
-{
-  "project1": {
-    "id": 1436,
-    "name": "lemons_annotated"
-  },
-  "project2": {
-    "id": 1455,
-    "name": "kiwi_annotated"
-  }
-}
-```
+**Step 4:** See warnings and errors in app's logs
 
-<img src="https://i.imgur.com/TR070VM.png"/>
-
-**Step 4:** Task is created in `Application Sessions`. 
+**Step 5:** Task is created in `Application Sessions`. 
