@@ -30,27 +30,12 @@ Visually compare and merge two images projects: datasets / images / image tags /
 
 **Step 2:** Please, firstly use [`Diff Merge Project Meta`](https://ecosystem.supervise.ly/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
 
-**Step 2:** Run app from the `Apps` page of current team
+**Step 2:** Run app from the `Apps` page of current team. Choose two projects to compare and merge
 
-<img src="https://i.imgur.com/QRYME1U.png" width="500px"/>
+<img src="https://i.imgur.com/WkLZ05w.png" width="500px"/>
 
-**Step 3:** Explore comparison tables, define merge options and press `Run` button.
+**Step 3:** Explore comparison table, define merge options and press `Run` button.
 
-**Step 4:** New project is created. Information about input projects is saved in `custom data` of created project. For example:
+**Step 4:** See warnings and errors in app's logs
 
-```json
-{
-  "project1": {
-    "id": 1436,
-    "name": "lemons_annotated"
-  },
-  "project2": {
-    "id": 1455,
-    "name": "kiwi_annotated"
-  }
-}
-```
-
-<img src="https://i.imgur.com/TR070VM.png"/>
-
-**Step 4:** Task is created in `Application Sessions`. 
+**Step 5:** Task is created in `Application Sessions`. 
