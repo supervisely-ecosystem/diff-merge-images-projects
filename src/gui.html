@@ -11,15 +11,14 @@
         <sly-card title="Result project" style="width: 34%" class="mr15">
             <div class="fflex">
                 <el-button
-                        :disabled="state.resultProjectName.length === 0"
+                        :disabled="!state.resultProjectId"
                         type="primary"
                         @click="command('merge')"
                         v-if="!data.createdProjectName"
                 >
                     <i class="zmdi zmdi-play" style="margin-right: 5px"></i> Run
                 </el-button>
-                <div class="ml5" v-if="state.resultProjectName.length === 0" style="color: red"> Define project name
-                </div>
+                <div class="ml5" v-if="!state.resultProjectId" style="color: red"> Result project undefined</div>
             </div>
             <sly-field v-if="data.createdProjectName" title="" description="Project">
                 <a slot="title" target="_blank"
@@ -39,7 +38,8 @@
         </sly-card>
     </div>
 
-    <sly-card class="mt15" title="Compare Datasets" subtitle="Click on number to preview images">
+    <sly-card class="mt15" title="Compare Datasets" subtitle="Initial matching is performed using names of datasets and
+                                                              their images. Click on number to preview images">
         <el-table class="ultra-table"
                   :data="data.table"
                   style="width: 100%"
@@ -110,12 +110,14 @@
             - dataset present only in one project
         </div>
     </sly-card>
-<!--    <pre>{{state.click}}</pre>-->
+    <pre>{{state.clickIndex}}</pre>
+    <pre>{{state.click}}</pre>
     <sly-card class="mt15"
               title="Images"
-              subtitle="Click on number in 'Compare Datasets' table to preview images">
+              subtitle="Click on number in 'Compare Datasets' table to preview images. Number of Matched images
+              is multiplied by factor 2 because images are showed from both projects">
 <!--        <div v-if="state.click">Selected left/right: {{state.click.left.name}} / {{state.click.right.name}}</div>-->
-        <div class="mt5" v-if="state.click" :style="{color: state.click.color[state.clickIndex]}">
+        <div class="mb5" v-if="state.click" :style="{color: state.click.color[state.clickIndex]}">
             <i v-for="icon in state.click.icon[state.clickIndex]" :class="icon"></i>
             <span v-if="state.click.numbers[state.clickIndex] > 0">{{state.click.numbers[state.clickIndex]}}</span>
             {{state.click.message[state.clickIndex]}}
@@ -124,5 +126,32 @@
                    :options="{perPage: 10, pageSizes: [10, 20, 50, 100]}"
                    :content='data.images'
         ></sly-table>
+    </sly-card>
+
+    <sly-card class="mt15" title="Settings" subtitle="Define merge options">
+        <sly-field title="How to merge" description="unify (combine all images)  or intersect (keep only matched images)">
+            <sly-icon slot="icon" :options="{ color: '#ceadff', bgColor: '#f6ebff', rounded: false }">
+                <i class="zmdi zmdi-arrow-merge"></i>
+            </sly-icon>
+            <el-select v-model="state.merge">
+                <el-option v-for="item in data.mergeOptions" :key="item" :label="item"
+                           :value="item"></el-option>
+            </el-select>
+        </sly-field>
+        <sly-field class="mt15" title="How to resolve conflicts" description="skip / use left / use right">
+            <sly-icon slot="icon" :options="{ color: '#ff7070', bgColor: '#ffdbdb', rounded: false }">
+                <i class="zmdi zmdi-alert-octagon"></i>
+            </sly-icon>
+            <el-select v-model="state.resolve">
+                <el-option v-for="item in data.resolveOptions" :key="item" :label="item" :value="item"></el-option>
+            </el-select>
+        </sly-field>
+        <sly-field title="Result project" description="Choose empty project that was created with app 'Diff Merge Project Meta'">
+            <sly-icon slot="icon" :options="{ color: '#2cd26e', bgColor: '#d8f8e7', rounded: false }">
+                <i class="zmdi zmdi-collection-folder-image"></i>
+            </sly-icon>
+            <sly-select-team-workspace :team-id.sync="state.teamId" :workspace-id.sync="state.workspaceId"/>
+            <sly-select-project :workspace-id="state.workspaceId" :project-id.sync="state.resultProjectId" />
+        </sly-field>
     </sly-card>
 </div>

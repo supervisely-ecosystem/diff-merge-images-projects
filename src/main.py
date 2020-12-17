@@ -32,23 +32,23 @@ def process_items(ds_info1, collection1, ds_info2, collection2):
         images1 = collection1.get(name, [])
         images2 = collection2.get(name, [])
         if len(images1) == 0:
-            compare["message"] = ["new dataset (in right)"]
+            compare["message"] = ["new dataset (right)"]
             #compare["icon"] = [["zmdi zmdi-long-arrow-left", "zmdi zmdi-alert-circle-o"]]
             compare["icon"] = [["zmdi zmdi-folder-outline"]]
             compare["color"] = ["#F39C12"]
             compare["numbers"] = [-1]
             compare["left"] = {"name": ""}
             compare["right"] = {"name": name, "count": len(images2)}
-            results_data.append([[], [], [], images2])
+            results_data.append([images2])
         elif len(images2) == 0:
-            compare["message"] = ["new dataset (in left)"]
+            compare["message"] = ["new dataset (left)"]
             #compare["infoIcon"] = [["zmdi zmdi-alert-circle-o", "zmdi zmdi-long-arrow-right"]]
             compare["icon"] = [["zmdi zmdi-folder-outline"]]
             compare["color"] = ["#F39C12"]
             compare["numbers"] = [-1]
             compare["left"] = {"name": name, "count": len(images1)}
             compare["right"] = {"name": ""}
-            results_data.append([[], [], images1, []])
+            results_data.append([images1])
         else:
             img_dict1 = {img_info.name: img_info for img_info in images1}
             img_dict2 = {img_info.name: img_info for img_info in images2}
@@ -63,7 +63,7 @@ def process_items(ds_info1, collection1, ds_info2, collection2):
             uniq1 = [img_dict1[name] for name in img_dict1.keys() - same_names]
             uniq2 = [img_dict2[name] for name in img_dict2.keys() - same_names]
 
-            compare["message"] = ["matched", "conflicts", "unique (in left)", "unique (in right)"]
+            compare["message"] = ["matched", "conflicts", "unique (left)", "unique (right)"]
             compare["icon"] = [["zmdi zmdi-check"], ["zmdi zmdi-close"], ["zmdi zmdi-plus-circle-o"], ["zmdi zmdi-plus-circle-o"]]
             compare["color"] = ["green", "red", "#20a0ff", "#20a0ff"]
             compare["numbers"] = [len(matched) / 2, len(diff) / 2, len(uniq1), len(uniq2)]
@@ -167,21 +167,19 @@ def init_ui(api: sly.Api, task_id, app_logger):
         "projectPreviewUrl2": api.image.preview_url(PROJECT2.reference_image_url, 100, 100),
         "table": result,
         "images": {"columns": [], "data": []},
-        # "mergeClassesOptions": ["unify", "intersect"],
+        "mergeOptions": ["unify", "intersect"],
         # "mergeTagsOptions": ["unify", "intersect"],
-        # "resolveClassesOptions": ["skip class", "use left", "use right"],
+        "resolveOptions": ["skip image", "use left", "use right"],
         # "resolveTagsOptions": ["skip tag", "use left", "use right"],
         # "createdProjectId": None,
         # "createdProjectName": None
     }
     state = {
-        "mergeClasses": "unify",
-        "mergeTags": "unify",
-        "resolveClasses": "skip class",
-        "resolveTags": "skip tag",
-        "resultProjectName": "merged project",
+        "merge": "unify",
+        "resolve": "skip image",
         "teamId": TEAM_ID,
         "workspaceId": WORKSPACE_ID,
+        "resultProjectId": None,
         "click": None,
         "clickIndex": None
     }
@@ -213,9 +211,11 @@ def _merge(items_info, collection1, collection2, merge_option, resolve):
 
 
 
-# @my_app.callback("merge")
-# @sly.timeit
-# def merge(api: sly.Api, task_id, context, state, app_logger):
+@my_app.callback("merge")
+@sly.timeit
+def merge(api: sly.Api, task_id, context, state, app_logger):
+    pass
+
 #     classes = _merge(CLASSES_INFO, META1.obj_classes, META2.obj_classes, state["mergeClasses"], state["resolveClasses"])
 #     tags = _merge(TAGS_INFO, META1.tag_metas, META2.tag_metas, state["mergeTags"], state["resolveTags"])
 #
