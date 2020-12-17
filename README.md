@@ -20,7 +20,7 @@
 
 ## Overview
 
-Visually compare and merge two images projects: datasets / images / image tags / labels / image metadata. Define how to merge them and how to resolve conflicts. New empty project will be created with merged classes and tags. 
+Visually compare and merge two images projects: datasets / images / image tags / labels / image metadata. Define how to merge them and how to resolve conflicts. 
 
 <img src="https://i.imgur.com/qjCJL5F.png"/>
 
