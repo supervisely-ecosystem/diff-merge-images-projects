@@ -28,7 +28,7 @@ Visually compare and merge two images projects: datasets / images / image tags /
 
 **Step 1:** Add app to your team from Ecosystem if it is not there
 
-**Step 2:** Please, use use [`Diff Merge Project Meta`](https://ecosystem.supervise.ly/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result you will have empty project with merged classes and tags. This project should be used as a result project for current application. 
+**Step 2:** Please, firstly use [`Diff Merge Project Meta`](https://ecosystem.supervise.ly/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
 
 **Step 2:** Run app from the `Apps` page of current team
 
