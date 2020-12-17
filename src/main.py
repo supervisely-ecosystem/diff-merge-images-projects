@@ -1,4 +1,5 @@
 import os
+import time
 from collections import defaultdict
 import supervisely_lib as sly
 
@@ -167,6 +168,10 @@ def init_ui(api: sly.Api, task_id, app_logger):
         "mergeTagsOptions": ["combine", "use left", "use right"],
         "mergeLabelsOptions": ["combine", "use left", "use right"],
         "mergeMetadataOptions": ["combine", "use left", "use right"],
+        "progressCurrent": 0,
+        "progressTotal": 0,
+        "progress": 0,
+        "started": False,
     }
     state = {
         "merge": "unify",
@@ -182,10 +187,24 @@ def init_ui(api: sly.Api, task_id, app_logger):
     }
     return data, state
 
+def _increment_progress(api, task_id, progress):
+    progress.iter_done_report()
+    fields = [
+        {"field": "data.progressCurrent", "payload": progress.current},
+        {"field": "data.progress", "payload": int(100 * progress.current / progress.total)},
+    ]
+    api.app.set_fields(task_id, fields)
 
 @my_app.callback("merge")
 @sly.timeit
 def merge(api: sly.Api, task_id, context, state, app_logger):
+    progress_total = sum([len(c["message"]) for c in RESULTS])
+    fields = [
+        {"field": "data.started", "payload": True},
+        {"field": "data.progressTotal", "payload": progress_total},
+    ]
+    api.app.set_fields(task_id, fields)
+
     # result project has to be empty
     result_project_id = state["resultProjectId"]
     if result_project_id is None:
@@ -219,12 +238,15 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
         api.annotation.upload_jsons(uploaded_ids, anns_json)
         return res_dataset
 
-    progress = sly.Progress("Processing", len(RESULTS))
+    progress = sly.Progress("Processing", progress_total)
+
     for compare, items in zip(RESULTS, RESULTS_DATA):
+        #@TODO: for debug
+        time.sleep(5)
         for idx, message in enumerate(compare["message"]):
             images = items[idx]
             if len(images) == 0:
-                progress.iter_done_report()
+                _increment_progress(api, task_id, progress)
                 continue
 
             left_ds = compare["left"]["name"]
@@ -232,7 +254,11 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
             app_logger.info("[{}] LEFT: {!r} RIGHT: {!r}".format(len(images), left_ds, right_ds))
 
-            res_dataset = None
+            if left_ds != "":
+                res_dataset = api.dataset.get_info_by_name(result_project.id, left_ds)
+            if right_ds != "" and res_dataset is not None:
+                res_dataset = api.dataset.get_info_by_name(result_project.id, right_ds)
+
             # "matched", "conflicts", "unique (left)", "unique (right)"
             if message == "matched":
                 left_ds_id = api.dataset.get_info_by_name(PROJECT1.id, left_ds).id
@@ -337,8 +363,10 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
             elif message == "conflicts":
                 #["unify", "intersect"]
                 if state["merge"] == "intersect":
+                    _increment_progress(api, task_id, progress)
                     continue
                 if state["resolve"] == "skip image":
+                    _increment_progress(api, task_id, progress)
                     continue
                 elif state["resolve"] == "use left":
                     res_dataset = _add_simple(res_dataset, images, left_ds)
@@ -348,12 +376,8 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
                 res_dataset = _add_simple(res_dataset, images, left_ds)
             elif message == "unique (right)":
                 res_dataset = _add_simple(res_dataset, images, right_ds)
-        progress.iter_done_report()
-        fields = [
-            {"field": "data.", "payload": result_project.id},
-            {"field": "data.createdProjectName", "payload": result_project.name},
-        ]
-        api.app.set_fields(task_id, fields)
+
+        _increment_progress(api, task_id, progress)
 
     fields = [
         {"field": "data.createdProjectId", "payload": result_project.id},
