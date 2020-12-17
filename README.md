@@ -22,7 +22,7 @@
 
 Visually compare and merge two images projects: datasets / images / image tags / labels / image metadata. Define how to merge them and how to resolve conflicts. 
 
-<img src="https://i.imgur.com/qjCJL5F.png"/>
+<img src="https://i.imgur.com/qTnXLaC.png"/>
 
 ## How To Use
 
