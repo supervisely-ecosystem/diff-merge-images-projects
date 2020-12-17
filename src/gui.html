@@ -110,11 +110,11 @@
             - dataset present only in one project
         </div>
     </sly-card>
-    <pre>{{state.clickIndex}}</pre>
-    <pre>{{state.click}}</pre>
+<!--    <pre>{{state.clickIndex}}</pre>-->
+<!--    <pre>{{state.click}}</pre>-->
     <sly-card class="mt15"
               title="Images"
-              subtitle="Click on number in 'Compare Datasets' table to preview images. Number of Matched images
+              subtitle="Click on number in 'Compare Datasets' table to preview images. ⚠️ Number of Matched images (of Conflicts)
               is multiplied by factor 2 because images are showed from both projects">
 <!--        <div v-if="state.click">Selected left/right: {{state.click.left.name}} / {{state.click.right.name}}</div>-->
         <div class="mb5" v-if="state.click" :style="{color: state.click.color[state.clickIndex]}">
@@ -129,7 +129,7 @@
     </sly-card>
 
     <sly-card class="mt15" title="Settings" subtitle="Define merge options">
-        <sly-field title="How to merge" description="unify (combine all images)  or intersect (keep only matched images)">
+        <sly-field title="Merge strategy" description="unify (combine all images)  or intersect (keep only matched images)">
             <sly-icon slot="icon" :options="{ color: '#ceadff', bgColor: '#f6ebff', rounded: false }">
                 <i class="zmdi zmdi-arrow-merge"></i>
             </sly-icon>
@@ -144,6 +144,25 @@
             </sly-icon>
             <el-select v-model="state.resolve">
                 <el-option v-for="item in data.resolveOptions" :key="item" :label="item" :value="item"></el-option>
+            </el-select>
+        </sly-field>
+        <sly-field class="mt15"
+                   title="How to merge annotations on matched images"
+                   description="Define settings for image tags, labels, and image metadata">
+            <sly-icon slot="icon" :options="{ color: '#ff7070', bgColor: '#ffdbdb', rounded: false }">
+                <i class="zmdi zmdi-alert-octagon"></i>
+            </sly-icon>
+            <div style="width: 120px">Image Tags</div>
+            <el-select class="mt5 mb10" v-model="state.mergeTags">
+                <el-option v-for="item in data.mergeTagsOptions" :key="item" :label="item" :value="item"></el-option>
+            </el-select>
+            <div style="width: 120px">Labels</div>
+            <el-select class="mt5 mb10" v-model="state.mergeLabels">
+                <el-option v-for="item in data.mergeLabelsOptions" :key="item" :label="item" :value="item"></el-option>
+            </el-select>
+            <div style="width: 120px">Image Metadata</div>
+            <el-select class="mt5 mb10" v-model="state.mergeMetadata">
+                <el-option v-for="item in data.mergeMetadataOptions" :key="item" :label="item" :value="item"></el-option>
             </el-select>
         </sly-field>
         <sly-field title="Result project" description="Choose empty project that was created with app 'Diff Merge Project Meta'">

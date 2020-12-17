@@ -1,28 +1,25 @@
 import os
+from collections import defaultdict
 import supervisely_lib as sly
 
-
+# ignore_task_id=True allows to access data in different workspaces with the same API object.
+# It is disabled by default to protect data from other workspaces
 my_app = sly.AppService(ignore_task_id=True)
 
 TEAM_ID = int(os.environ['context.teamId'])
 WORKSPACE_ID = int(os.environ['context.workspaceId'])
-
 PROJECT_ID1 = int(os.environ['modal.state.projectId1'])
 PROJECT1 = None
 META1: sly.ProjectMeta = None
-
 PROJECT_ID2 = int(os.environ['modal.state.projectId2'])
 PROJECT2 = None
 META2: sly.ProjectMeta = None
-
-CLASSES_INFO = None
-TAGS_INFO = None
-
+RESULTS = None
 RESULTS_DATA = None
 
 
 def process_items(ds_info1, collection1, ds_info2, collection2):
-    global RESULTS_DATA
+    global RESULTS, RESULTS_DATA
     ds_names = ds_info1.keys() | ds_info2.keys()
 
     results = []
@@ -73,7 +70,8 @@ def process_items(ds_info1, collection1, ds_info2, collection2):
 
         results.append(compare)
 
-        RESULTS_DATA = results_data
+    RESULTS = results
+    RESULTS_DATA = results_data
     return results
 
 
@@ -107,11 +105,8 @@ def show_images(api: sly.Api, task_id, context, state, app_logger):
     click = state.get("click", None)
     if click is None:
         return
-
     clickIndex = state["clickIndex"]
-    compare_type = click["message"][clickIndex]
     images = RESULTS_DATA[click["dsIndex"]][clickIndex]
-
     data = []
     for idx, info in enumerate(images):
         data.append([
@@ -129,12 +124,10 @@ def show_images(api: sly.Api, task_id, context, state, app_logger):
                                   info.id),
                     info.name),
         ])
-
     cell_table = {
         "columns": ["#", "project id", "project", "dataset id", "dataset", "image id", "image"],
         "data": data
     }
-
     fields = [
         {"field": "data.images", "payload": cell_table},
     ]
@@ -173,9 +166,16 @@ def init_ui(api: sly.Api, task_id, app_logger):
         # "resolveTagsOptions": ["skip tag", "use left", "use right"],
         # "createdProjectId": None,
         # "createdProjectName": None
+
+        "mergeTagsOptions": ["combine", "use left", "use right"],
+        "mergeLabelsOptions": ["combine", "use left", "use right"],
+        "mergeMetadataOptions": ["combine", "use left", "use right"],
     }
     state = {
         "merge": "unify",
+        "mergeTags": "combine",
+        "mergeLabels": "combine",
+        "mergeMetadata": "combine",
         "resolve": "skip image",
         "teamId": TEAM_ID,
         "workspaceId": WORKSPACE_ID,
@@ -186,35 +186,44 @@ def init_ui(api: sly.Api, task_id, app_logger):
     return data, state
 
 
-def _merge(items_info, collection1, collection2, merge_option, resolve):
-    pass
-    # res = []
-    # matched_items, conflict_items, missed_items = items_info
-    # for info in matched_items:
-    #     res.append(collection1.get(info["name1"]))
-    # if merge_option == "unify":
-    #     for info in conflict_items:
-    #         if "skip" in resolve:
-    #             continue
-    #         elif resolve == "use left":
-    #             res.append(collection1.get(info["name1"]))
-    #         elif resolve == "use right":
-    #             res.append(collection2.get(info["name2"]))
-    #     for info in missed_items:
-    #         if "name1" in info:
-    #             res.append(collection1.get(info["name1"]))
-    #         else:
-    #             res.append(collection2.get(info["name2"]))
-    # return res
-
-
-
-
-
 @my_app.callback("merge")
 @sly.timeit
 def merge(api: sly.Api, task_id, context, state, app_logger):
-    pass
+    # result project has to be empty
+    result_project_id = state["resultProjectId"]
+    if result_project_id is None:
+        my_app.logger.warn("Result project id is not defined")
+        return
+    result_project = api.project.get_info_by_id(result_project_id)
+    if result_project is None:
+        my_app.logger.warn("Result project not found")
+        return
+    res_datasets = api.dataset.get_list(result_project.id)
+    if len(res_datasets) != 0:
+        my_app.logger.warn("Result project is not empty, choose another one")
+        return
+
+    #@TODO: add progress
+    for compare, items in zip(RESULTS, RESULTS_DATA):
+        for idx, message in enumerate(compare["message"]):
+            images = RESULTS_DATA[idx]
+            if len(images) == 0:
+                continue
+
+            res_dataset = None
+            # "matched", "conflicts", "unique (left)", "unique (right)"
+            if message == "matched":
+                image_ids, image_names, image_metas = None, defaultdict(list), defaultdict(list)
+                for image_info in images:
+                    if res_dataset is None:
+                        res_dataset = api.dataset.create(result_project.id, image_info.dataset_name)
+                    image_ids[image_info.dataset_id].append(image_info.id)
+                    image_names[image_info.dataset_id].append(image_info.name)
+                for dataset_id in image_ids.keys():
+                    ids = image_ids[dataset_id]
+                    names = image_names[dataset_id]
+
+                    api.image.upload_ids(res_dataset.id, names, ids)
 
 #     classes = _merge(CLASSES_INFO, META1.obj_classes, META2.obj_classes, state["mergeClasses"], state["resolveClasses"])
 #     tags = _merge(TAGS_INFO, META1.tag_metas, META2.tag_metas, state["mergeTags"], state["resolveTags"])
