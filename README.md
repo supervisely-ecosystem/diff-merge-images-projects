@@ -20,13 +20,15 @@
 
 ## Overview
 
-Visually compare projects meta: tags and classes. Define how to merge them and how to resolve conflicts. New empty project will be created with merged classes and tags. Then you can use `Diff Merge Projects` app to merge images and annotations and place them to the project created by this application.
+Visually compare and merge two images projects: datasets / images / image tags / labels / image metadata. Define how to merge them and how to resolve conflicts. New empty project will be created with merged classes and tags. 
 
 <img src="https://i.imgur.com/qjCJL5F.png"/>
 
 ## How To Use
 
 **Step 1:** Add app to your team from Ecosystem if it is not there
+
+**Step 2:** Please, use use [`Diff Merge Project Meta`](https://ecosystem.supervise.ly/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result you will have empty project with merged classes and tags. This project should be used as a result project for current application. 
 
 **Step 2:** Run app from the `Apps` page of current team
 
