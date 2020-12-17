@@ -161,12 +161,9 @@ def init_ui(api: sly.Api, task_id, app_logger):
         "table": result,
         "images": {"columns": [], "data": []},
         "mergeOptions": ["unify", "intersect"],
-        # "mergeTagsOptions": ["unify", "intersect"],
         "resolveOptions": ["skip image", "use left", "use right"],
-        # "resolveTagsOptions": ["skip tag", "use left", "use right"],
-        # "createdProjectId": None,
-        # "createdProjectName": None
-
+        "createdProjectId": None,
+        "createdProjectName": None,
         "mergeTagsOptions": ["combine", "use left", "use right"],
         "mergeLabelsOptions": ["combine", "use left", "use right"],
         "mergeMetadataOptions": ["combine", "use left", "use right"],
@@ -202,53 +199,169 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
     if len(res_datasets) != 0:
         my_app.logger.warn("Result project is not empty, choose another one")
         return
+    res_meta = sly.ProjectMeta.from_json(api.project.get_meta(result_project.id))
 
-    #@TODO: add progress
+    def _add_simple(res_dataset, images, ds_name):
+        image_ids = []
+        image_names = []
+        image_metas = []
+        for info in images:
+            image_ids.append(info.id)
+            image_names.append(info.name)
+            image_metas.append(info.meta)
+
+        if res_dataset is None:
+            res_dataset = api.dataset.create(result_project.id, ds_name)
+        uploaded_images = api.image.upload_ids(res_dataset.id, image_names, image_ids, metas=image_metas)
+        uploaded_ids = [info.id for info in uploaded_images]
+
+        anns_json = [ann_info.annotation for ann_info in api.annotation.download_batch(images[0].dataset_id, image_ids)]
+        api.annotation.upload_jsons(uploaded_ids, anns_json)
+        return res_dataset
+
+    progress = sly.Progress("Processing", len(RESULTS))
     for compare, items in zip(RESULTS, RESULTS_DATA):
         for idx, message in enumerate(compare["message"]):
             images = RESULTS_DATA[idx]
             if len(images) == 0:
                 continue
 
+            left_ds = compare["left"]["name"]
+            right_ds = compare["right"]["name"]
+            app_logger.info("[{}] LEFT: {!r} RIGHT: {!r}".format(len(images), left_ds, right_ds))
+
             res_dataset = None
             # "matched", "conflicts", "unique (left)", "unique (right)"
             if message == "matched":
-                image_ids, image_names, image_metas = None, defaultdict(list), defaultdict(list)
+                image_ids, image_names = None, defaultdict(list), defaultdict(list)
+                matched_pairs = defaultdict(lambda: defaultdict(int))
                 for image_info in images:
                     if res_dataset is None:
                         res_dataset = api.dataset.create(result_project.id, image_info.dataset_name)
                     image_ids[image_info.dataset_id].append(image_info.id)
                     image_names[image_info.dataset_id].append(image_info.name)
+                    if image_info.dataset_name == left_ds:
+                        matched_pairs[image_info.name][left_ds] = image_info
+                    elif image_info.dataset_name == right_ds:
+                        matched_pairs[image_info.name][right_ds] = image_info
+
+                #merge metadata for matched pairs
+                metas = {}
+                for image_name in matched_pairs.keys():
+                    left_info = matched_pairs[image_name][left_ds]
+                    right_info = matched_pairs[image_name][right_ds]
+                    res_meta = {}
+                    if state["mergeMetadata"] == "combine":
+                        res_meta["left"] = {"image_id": left_info.id, "data": left_info.meta}
+                        res_meta["right"] = {"image_id": right_info.id, "data": right_info.meta}
+                    elif state["mergeMetadata"] == "use left":
+                        res_meta = left_info.meta
+                    elif state["mergeMetadata"] == "use right":
+                        res_meta = right_info.meta
+                    metas[image_name] = res_meta
+
+                #uplaod images for matched pairs
+                uploaded_images = None
                 for dataset_id in image_ids.keys():
-                    ids = image_ids[dataset_id]
-                    names = image_names[dataset_id]
+                    uploaded_images = api.image.upload_ids(res_dataset.id, image_names[dataset_id], image_ids[dataset_id],
+                                                           metas=[metas[image_name] for image_name in image_names[dataset_id]])
+                    break
+                uploaded_ids = {info.name: info.id for info in uploaded_images}
 
-                    api.image.upload_ids(res_dataset.id, names, ids)
+                left_ds_id = None
+                left_image_ids = []
+                right_ds_id = None
+                right_image_ids = []
+                res_image_ids = []
+                for image_name in matched_pairs.keys():
+                    left_info = matched_pairs[image_name][left_ds]
+                    left_image_ids.append(left_info.id)
+                    left_ds_id = left_info.dataset_id
 
-#     classes = _merge(CLASSES_INFO, META1.obj_classes, META2.obj_classes, state["mergeClasses"], state["resolveClasses"])
-#     tags = _merge(TAGS_INFO, META1.tag_metas, META2.tag_metas, state["mergeTags"], state["resolveTags"])
-#
-#     res_meta = sly.ProjectMeta(obj_classes=sly.ObjClassCollection(classes),
-#                                tag_metas=sly.TagMetaCollection(tags),
-#                                project_type=PROJECT1.type)
-#     res_project = api.project.create(state["workspaceId"],
-#                                      state["resultProjectName"],
-#                                      type=PROJECT1.type,
-#                                      description=f"{PROJECT1.name} + {PROJECT2.name}",
-#                                      change_name_if_conflict=True)
-#     api.project.update_meta(res_project.id, res_meta.to_json())
-#     api.project.update_custom_data(res_project.id, {
-#         "project1": {"id": PROJECT1.id, "name": PROJECT1.name},
-#         "project2": {"id": PROJECT2.id, "name": PROJECT2.name}
-#     })
-#     fields = [
-#         {"field": "data.createdProjectId", "payload": res_project.id},
-#         {"field": "data.createdProjectName", "payload": res_project.name},
-#     ]
-#     api.app.set_fields(task_id, fields)
-#     app_logger.info("Project is created", extra={'project_id': res_project.id, 'project_name': res_project.name})
-#     #api.task.set_output_project(task_id, res_project.id, res_project.name)
-#     my_app.stop()
+                    right_info = matched_pairs[image_name][right_ds]
+                    right_image_ids.append(right_info.id)
+                    right_ds_id = right_info.dataset_id
+
+                    res_image_ids.append(uploaded_ids[image_name])
+
+                left_anns = api.annotation.download_batch(left_ds_id, left_image_ids)
+                right_anns = api.annotation.download_batch(right_ds_id, right_image_ids)
+                anns = []
+                for left_ann_info, right_ann_info in zip(left_anns, right_anns):
+                    left_json = left_ann_info.annotation
+                    left_ann = sly.Annotation.from_json(left_json, META1)
+                    right_json = right_ann_info.annotation
+                    right_ann = sly.Annotation.from_json(right_json, META2)
+
+                    tags = None
+                    if state["mergeTags"] == "combine":
+                        tags = left_ann.img_tags.merge(right_ann.img_tags)
+                    elif state["mergeTags"] == "use left":
+                        tags = left_ann.img_tags
+                    elif state["mergeMetadata"] == "use right":
+                        tags = right_ann.img_tags
+                    if tags is None:
+                        raise RuntimeError("Merge image tags: failed")
+                    # drop tags that are not in result meta
+                    filtered_tags = []
+                    for tag in tags:
+                        tag: sly.Tag
+                        if res_meta.get_tag_meta(tag.meta.name) is not None:
+                            filtered_tags.append(tag)
+                    tags = sly.TagCollection(filtered_tags)
+
+                    labels = None
+                    if state["mergeLabels"] == "combine":
+                        labels = left_ann.labels + right_ann.labels
+                    elif state["mergeLabels"] == "use left":
+                        labels = left_ann.labels
+                    elif state["mergeLabels"] == "use right":
+                        labels = right_ann.labels
+                    if labels is None:
+                        raise RuntimeError("Merge labels: failed")
+                    # drop labels that are not in result meta
+                    filtered_labels = []
+                    for label in labels:
+                        label: sly.Label
+                        if res_meta.get_obj_class(label.obj_class.name) is not None:
+                            filtered_labels.append(label)
+                    labels = filtered_labels
+
+                    res_ann = left_ann.clone(labels=labels, img_tags=tags)
+                    anns.append(res_ann)
+
+                # upload annotations
+                api.annotation.upload_anns(res_image_ids, anns)
+
+            elif message == "conflicts":
+                #["unify", "intersect"]
+                if state["merge"] == "intersect":
+                    continue
+                if state["resolve"] == "skip image":
+                    continue
+                elif state["resolve"] == "use left":
+                    res_dataset = _add_simple(res_dataset, images, left_ds)
+                elif state["resolve"] == "use right":
+                    res_dataset = _add_simple(res_dataset, images, right_ds)
+            elif message == "unique (left)":
+                res_dataset = _add_simple(res_dataset, images, left_ds)
+            elif message == "unique (right)":
+                res_dataset = _add_simple(res_dataset, images, right_ds)
+        progress.iter_done_report()
+        fields = [
+            {"field": "data.", "payload": result_project.id},
+            {"field": "data.createdProjectName", "payload": result_project.name},
+        ]
+        api.app.set_fields(task_id, fields)
+
+    fields = [
+        {"field": "data.createdProjectId", "payload": result_project.id},
+        {"field": "data.createdProjectName", "payload": result_project.name},
+    ]
+    api.app.set_fields(task_id, fields)
+    app_logger.info("Project is created", extra={'project_id': result_project.id, 'project_name': result_project.name})
+    #api.task.set_output_project(task_id, res_project.id, res_project.name)
+    my_app.stop()
 
 
 def main():

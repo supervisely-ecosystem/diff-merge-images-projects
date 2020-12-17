@@ -110,8 +110,8 @@
             - dataset present only in one project
         </div>
     </sly-card>
-<!--    <pre>{{state.clickIndex}}</pre>-->
-<!--    <pre>{{state.click}}</pre>-->
+    <pre>{{state.clickIndex}}</pre>
+    <pre>{{state.click}}</pre>
     <sly-card class="mt15"
               title="Images"
               subtitle="Click on number in 'Compare Datasets' table to preview images. ⚠️ Number of Matched images (of Conflicts)
@@ -149,8 +149,8 @@
         <sly-field class="mt15"
                    title="How to merge annotations on matched images"
                    description="Define settings for image tags, labels, and image metadata">
-            <sly-icon slot="icon" :options="{ color: '#ff7070', bgColor: '#ffdbdb', rounded: false }">
-                <i class="zmdi zmdi-alert-octagon"></i>
+            <sly-icon slot="icon" :options="{ color: '#6476ff', bgColor: '#e5f3ff', rounded: false }">
+                <i class="zmdi zmdi-shape"></i>
             </sly-icon>
             <div style="width: 120px">Image Tags</div>
             <el-select class="mt5 mb10" v-model="state.mergeTags">
