@@ -222,43 +222,48 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
     progress = sly.Progress("Processing", len(RESULTS))
     for compare, items in zip(RESULTS, RESULTS_DATA):
         for idx, message in enumerate(compare["message"]):
-            images = RESULTS_DATA[idx]
+            images = items[idx]
             if len(images) == 0:
+                progress.iter_done_report()
                 continue
 
             left_ds = compare["left"]["name"]
             right_ds = compare["right"]["name"]
+
             app_logger.info("[{}] LEFT: {!r} RIGHT: {!r}".format(len(images), left_ds, right_ds))
 
             res_dataset = None
             # "matched", "conflicts", "unique (left)", "unique (right)"
             if message == "matched":
-                image_ids, image_names = None, defaultdict(list), defaultdict(list)
+                left_ds_id = api.dataset.get_info_by_name(PROJECT1.id, left_ds).id
+                right_ds_id = api.dataset.get_info_by_name(PROJECT2.id, right_ds).id
+
+                image_ids, image_names = defaultdict(list), defaultdict(list)
                 matched_pairs = defaultdict(lambda: defaultdict(int))
                 for image_info in images:
                     if res_dataset is None:
-                        res_dataset = api.dataset.create(result_project.id, image_info.dataset_name)
+                        res_dataset = api.dataset.create(result_project.id, left_ds)
                     image_ids[image_info.dataset_id].append(image_info.id)
                     image_names[image_info.dataset_id].append(image_info.name)
-                    if image_info.dataset_name == left_ds:
-                        matched_pairs[image_info.name][left_ds] = image_info
-                    elif image_info.dataset_name == right_ds:
-                        matched_pairs[image_info.name][right_ds] = image_info
+                    if image_info.dataset_id == left_ds_id:
+                        matched_pairs[image_info.name][left_ds_id] = image_info
+                    elif image_info.dataset_id == right_ds_id:
+                        matched_pairs[image_info.name][right_ds_id] = image_info
 
                 #merge metadata for matched pairs
                 metas = {}
                 for image_name in matched_pairs.keys():
-                    left_info = matched_pairs[image_name][left_ds]
-                    right_info = matched_pairs[image_name][right_ds]
-                    res_meta = {}
+                    left_info = matched_pairs[image_name][left_ds_id]
+                    right_info = matched_pairs[image_name][right_ds_id]
+                    res_image_meta = {}
                     if state["mergeMetadata"] == "combine":
-                        res_meta["left"] = {"image_id": left_info.id, "data": left_info.meta}
-                        res_meta["right"] = {"image_id": right_info.id, "data": right_info.meta}
+                        res_image_meta["left"] = {"image_id": left_info.id, "data": left_info.meta}
+                        res_image_meta["right"] = {"image_id": right_info.id, "data": right_info.meta}
                     elif state["mergeMetadata"] == "use left":
-                        res_meta = left_info.meta
+                        res_image_meta = left_info.meta
                     elif state["mergeMetadata"] == "use right":
-                        res_meta = right_info.meta
-                    metas[image_name] = res_meta
+                        res_image_meta = right_info.meta
+                    metas[image_name] = res_image_meta
 
                 #uplaod images for matched pairs
                 uploaded_images = None
@@ -268,19 +273,15 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
                     break
                 uploaded_ids = {info.name: info.id for info in uploaded_images}
 
-                left_ds_id = None
                 left_image_ids = []
-                right_ds_id = None
                 right_image_ids = []
                 res_image_ids = []
                 for image_name in matched_pairs.keys():
-                    left_info = matched_pairs[image_name][left_ds]
+                    left_info = matched_pairs[image_name][left_ds_id]
                     left_image_ids.append(left_info.id)
-                    left_ds_id = left_info.dataset_id
 
-                    right_info = matched_pairs[image_name][right_ds]
+                    right_info = matched_pairs[image_name][right_ds_id]
                     right_image_ids.append(right_info.id)
-                    right_ds_id = right_info.dataset_id
 
                     res_image_ids.append(uploaded_ids[image_name])
 
