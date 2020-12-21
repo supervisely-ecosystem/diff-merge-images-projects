@@ -138,6 +138,9 @@ def show_images(api: sly.Api, task_id, context, state, app_logger):
 def init_ui(api: sly.Api, task_id, app_logger):
     global PROJECT1, PROJECT2, META1, META2, CLASSES_INFO, TAGS_INFO
 
+    if PROJECT_ID1 == PROJECT_ID2:
+        raise ValueError("Project can not be merged with itself")
+
     PROJECT1 = api.project.get_info_by_id(PROJECT_ID1)
     PROJECT2 = api.project.get_info_by_id(PROJECT_ID2)
 
@@ -242,7 +245,7 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
     for compare, items in zip(RESULTS, RESULTS_DATA):
         #@TODO: for debug
-        time.sleep(5)
+        #time.sleep(5)
         for idx, message in enumerate(compare["message"]):
             images = items[idx]
             if len(images) == 0:
@@ -254,9 +257,10 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
             app_logger.info("[{}] LEFT: {!r} RIGHT: {!r}".format(len(images), left_ds, right_ds))
 
+            res_dataset = None
             if left_ds != "":
                 res_dataset = api.dataset.get_info_by_name(result_project.id, left_ds)
-            if right_ds != "" and res_dataset is not None:
+            if right_ds != "" and res_dataset is None:
                 res_dataset = api.dataset.get_info_by_name(result_project.id, right_ds)
 
             # "matched", "conflicts", "unique (left)", "unique (right)"
@@ -372,9 +376,9 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
                     res_dataset = _add_simple(res_dataset, images, left_ds)
                 elif state["resolve"] == "use right":
                     res_dataset = _add_simple(res_dataset, images, right_ds)
-            elif message == "unique (left)":
+            elif message == "unique (left)" or message == 'new dataset (left)':
                 res_dataset = _add_simple(res_dataset, images, left_ds)
-            elif message == "unique (right)":
+            elif message == "unique (right)" or message == 'new dataset (right)':
                 res_dataset = _add_simple(res_dataset, images, right_ds)
 
         _increment_progress(api, task_id, progress)
@@ -389,6 +393,7 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
     my_app.stop()
 
 
+#@TODO: user friendly warnings and messages in popup
 #@TODO disable v-model components
 def main():
     sly.logger.info("Script arguments", extra={
