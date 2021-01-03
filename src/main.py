@@ -190,21 +190,24 @@ def init_ui(api: sly.Api, task_id, app_logger):
     }
     return data, state
 
-def _increment_progress(api, task_id, progress):
-    progress.iter_done_report()
+
+def _increment_progress(api, task_id, progress, count=None):
+    if count is not None:
+        progress.iters_done_report(count)
     fields = [
         {"field": "data.progressCurrent", "payload": progress.current},
         {"field": "data.progress", "payload": int(100 * progress.current / progress.total)},
     ]
     api.app.set_fields(task_id, fields)
 
+
 @my_app.callback("merge")
 @sly.timeit
 def merge(api: sly.Api, task_id, context, state, app_logger):
-    progress_total = sum([len(c["message"]) for c in RESULTS])
+    #progress_total = sum([len(c["message"]) for c in RESULTS])
     fields = [
         {"field": "data.started", "payload": True},
-        {"field": "data.progressTotal", "payload": progress_total},
+        #{"field": "data.progressTotal", "payload": progress_total},
     ]
     api.app.set_fields(task_id, fields)
 
@@ -241,21 +244,20 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
         api.annotation.upload_jsons(uploaded_ids, anns_json)
         return res_dataset
 
-    progress = sly.Progress("Processing", progress_total)
-
     for compare, items in zip(RESULTS, RESULTS_DATA):
         #@TODO: for debug
         #time.sleep(5)
         for idx, message in enumerate(compare["message"]):
             images = items[idx]
             if len(images) == 0:
-                _increment_progress(api, task_id, progress)
+                #(api, task_id, progress)
                 continue
 
             left_ds = compare["left"]["name"]
             right_ds = compare["right"]["name"]
 
-            app_logger.info("[{}] LEFT: {!r} RIGHT: {!r}".format(len(images), left_ds, right_ds))
+            progress = sly.Progress(f"[L] {left_ds} [R] {right_ds}", len(images) * 2)
+            _increment_progress(api, task_id, progress)
 
             res_dataset = None
             if left_ds != "":
@@ -299,7 +301,8 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
                 uploaded_images = None
                 for dataset_id in image_ids.keys():
                     uploaded_images = api.image.upload_ids(res_dataset.id, image_names[dataset_id], image_ids[dataset_id],
-                                                           metas=[metas[image_name] for image_name in image_names[dataset_id]])
+                                                           metas=[metas[image_name] for image_name in image_names[dataset_id]],
+                                                           progress_cb=lambda count: _increment_progress(api, task_id, progress, count))
                     break
                 uploaded_ids = {info.name: info.id for info in uploaded_images}
 
@@ -315,54 +318,59 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
                     res_image_ids.append(uploaded_ids[image_name])
 
-                left_anns = api.annotation.download_batch(left_ds_id, left_image_ids)
-                right_anns = api.annotation.download_batch(right_ds_id, right_image_ids)
-                anns = []
-                for left_ann_info, right_ann_info in zip(left_anns, right_anns):
-                    left_json = left_ann_info.annotation
-                    left_ann = sly.Annotation.from_json(left_json, META1)
-                    right_json = right_ann_info.annotation
-                    right_ann = sly.Annotation.from_json(right_json, META2)
+                for batch_left_image_ids, batch_right_image_ids, batch_res_image_ids in \
+                    zip(sly.batched(left_image_ids), sly.batched(right_image_ids), sly.batched(res_image_ids)):
 
-                    tags = None
-                    if state["mergeTags"] == "combine":
-                        tags = left_ann.img_tags.merge(right_ann.img_tags)
-                    elif state["mergeTags"] == "use left":
-                        tags = left_ann.img_tags
-                    elif state["mergeMetadata"] == "use right":
-                        tags = right_ann.img_tags
-                    if tags is None:
-                        raise RuntimeError("Merge image tags: failed")
-                    # drop tags that are not in result meta
-                    filtered_tags = []
-                    for tag in tags:
-                        tag: sly.Tag
-                        if res_meta.get_tag_meta(tag.meta.name) is not None:
-                            filtered_tags.append(tag)
-                    tags = sly.TagCollection(filtered_tags)
+                    left_anns = api.annotation.download_batch(left_ds_id, batch_left_image_ids)
+                    right_anns = api.annotation.download_batch(right_ds_id, batch_right_image_ids)
+                    anns = []
+                    for left_ann_info, right_ann_info in zip(left_anns, right_anns):
+                        left_json = left_ann_info.annotation
+                        left_ann = sly.Annotation.from_json(left_json, META1)
+                        right_json = right_ann_info.annotation
+                        right_ann = sly.Annotation.from_json(right_json, META2)
 
-                    labels = None
-                    if state["mergeLabels"] == "combine":
-                        labels = left_ann.labels + right_ann.labels
-                    elif state["mergeLabels"] == "use left":
-                        labels = left_ann.labels
-                    elif state["mergeLabels"] == "use right":
-                        labels = right_ann.labels
-                    if labels is None:
-                        raise RuntimeError("Merge labels: failed")
-                    # drop labels that are not in result meta
-                    filtered_labels = []
-                    for label in labels:
-                        label: sly.Label
-                        if res_meta.get_obj_class(label.obj_class.name) is not None:
-                            filtered_labels.append(label)
-                    labels = filtered_labels
+                        tags = None
+                        if state["mergeTags"] == "combine":
+                            tags = left_ann.img_tags.merge(right_ann.img_tags)
+                        elif state["mergeTags"] == "use left":
+                            tags = left_ann.img_tags
+                        elif state["mergeMetadata"] == "use right":
+                            tags = right_ann.img_tags
+                        if tags is None:
+                            raise RuntimeError("Merge image tags: failed")
+                        # drop tags that are not in result meta
+                        filtered_tags = []
+                        for tag in tags:
+                            tag: sly.Tag
+                            if res_meta.get_tag_meta(tag.meta.name) is not None:
+                                filtered_tags.append(tag)
+                        tags = sly.TagCollection(filtered_tags)
 
-                    res_ann = left_ann.clone(labels=labels, img_tags=tags)
-                    anns.append(res_ann)
+                        labels = None
+                        if state["mergeLabels"] == "combine":
+                            labels = left_ann.labels + right_ann.labels
+                        elif state["mergeLabels"] == "use left":
+                            labels = left_ann.labels
+                        elif state["mergeLabels"] == "use right":
+                            labels = right_ann.labels
+                        if labels is None:
+                            raise RuntimeError("Merge labels: failed")
+                        # drop labels that are not in result meta
+                        filtered_labels = []
+                        for label in labels:
+                            label: sly.Label
+                            if res_meta.get_obj_class(label.obj_class.name) is not None:
+                                filtered_labels.append(label)
+                        labels = filtered_labels
 
-                # upload annotations
-                api.annotation.upload_anns(res_image_ids, anns)
+                        res_ann = left_ann.clone(labels=labels, img_tags=tags)
+                        anns.append(res_ann)
+
+                    # upload annotations
+                    api.annotation.upload_anns(batch_res_image_ids, anns)
+
+                    _increment_progress(api, task_id, progress, len(anns))
 
             elif message == "conflicts":
                 #["unify", "intersect"]
