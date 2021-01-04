@@ -28,7 +28,7 @@
                 </sly-icon>
             </sly-field>
             <div v-if="data.started === true && !data.createdProjectName">
-                <div>Processing: {{data.progressCurrent}} / {{data.progressTotal}}</div>
+                <div>{{data.progressMessage}} {{data.progressCurrent}} / {{data.progressTotal}}</div>
                 <el-progress :percentage="data.progress"></el-progress>
             </div>
         </sly-card>

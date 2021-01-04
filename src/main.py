@@ -92,7 +92,8 @@ def _get_all_images(api: sly.Api, project):
                 "workspace_id": project.workspace_id,
                 "project_id": project.id,
                 "project_name": project.name,
-                "dataset_name": dataset.name
+                "dataset_name": dataset.name,
+                "meta": image_info.meta
             }
             image_info = image_info._replace(meta=meta)
             modified_images.append(image_info)
@@ -175,6 +176,7 @@ def init_ui(api: sly.Api, task_id, app_logger):
         "progressTotal": 0,
         "progress": 0,
         "started": False,
+        "progressMessage": ""
     }
     state = {
         "merge": "unify",
@@ -197,6 +199,8 @@ def _increment_progress(api, task_id, progress, count=None):
     fields = [
         {"field": "data.progressCurrent", "payload": progress.current},
         {"field": "data.progress", "payload": int(100 * progress.current / progress.total)},
+        {"field": "data.progressTotal", "payload": progress.total},
+        {"field": "data.progressMessage", "payload": progress.message},
     ]
     api.app.set_fields(task_id, fields)
 
@@ -204,10 +208,8 @@ def _increment_progress(api, task_id, progress, count=None):
 @my_app.callback("merge")
 @sly.timeit
 def merge(api: sly.Api, task_id, context, state, app_logger):
-    #progress_total = sum([len(c["message"]) for c in RESULTS])
     fields = [
         {"field": "data.started", "payload": True},
-        #{"field": "data.progressTotal", "payload": progress_total},
     ]
     api.app.set_fields(task_id, fields)
 
@@ -233,31 +235,33 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
         for info in images:
             image_ids.append(info.id)
             image_names.append(info.name)
-            image_metas.append(info.meta)
+            image_metas.append(info.meta["meta"])
+
+        progress_img = sly.Progress(f"Images", len(images) / 2)
+        progress_ann = sly.Progress(f"Annotations", len(images) / 2)
+        _progress_callback = lambda count: _increment_progress(api, task_id, progress_img, count)
 
         if res_dataset is None:
             res_dataset = api.dataset.create(result_project.id, ds_name)
-        uploaded_images = api.image.upload_ids(res_dataset.id, image_names, image_ids, metas=image_metas)
+        uploaded_images = api.image.upload_ids(res_dataset.id, image_names, image_ids, metas=image_metas, progress_cb=_progress_callback)
         uploaded_ids = [info.id for info in uploaded_images]
 
-        anns_json = [ann_info.annotation for ann_info in api.annotation.download_batch(images[0].dataset_id, image_ids)]
-        api.annotation.upload_jsons(uploaded_ids, anns_json)
+        for batch_src_ids, batch_dst_ids in zip(sly.batched(image_ids), sly.batched(uploaded_ids)):
+            api.annotation.copy_batch_by_ids(batch_src_ids, batch_dst_ids)
+            _increment_progress(api, task_id, progress_ann, len(batch_src_ids))
+
+        #anns_json = [ann_info.annotation for ann_info in api.annotation.download_batch(images[0].dataset_id, image_ids)]
+        #api.annotation.upload_jsons(uploaded_ids, anns_json)
         return res_dataset
 
     for compare, items in zip(RESULTS, RESULTS_DATA):
-        #@TODO: for debug
-        #time.sleep(5)
         for idx, message in enumerate(compare["message"]):
             images = items[idx]
             if len(images) == 0:
-                #(api, task_id, progress)
                 continue
 
             left_ds = compare["left"]["name"]
             right_ds = compare["right"]["name"]
-
-            progress = sly.Progress(f"[L] {left_ds} [R] {right_ds}", len(images) * 2)
-            _increment_progress(api, task_id, progress)
 
             res_dataset = None
             if left_ds != "":
@@ -267,6 +271,10 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
             # "matched", "conflicts", "unique (left)", "unique (right)"
             if message == "matched":
+                progress_img = sly.Progress(f"Images", len(images) / 2)
+                progress_ann = sly.Progress(f"Annotations", len(images) / 2)
+                _increment_progress(api, task_id, progress_img)
+
                 left_ds_id = api.dataset.get_info_by_name(PROJECT1.id, left_ds).id
                 right_ds_id = api.dataset.get_info_by_name(PROJECT2.id, right_ds).id
 
@@ -289,20 +297,21 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
                     right_info = matched_pairs[image_name][right_ds_id]
                     res_image_meta = {}
                     if state["mergeMetadata"] == "combine":
-                        res_image_meta["left"] = {"image_id": left_info.id, "data": left_info.meta}
-                        res_image_meta["right"] = {"image_id": right_info.id, "data": right_info.meta}
+                        res_image_meta["left"] = {"image_id": left_info.id, "data": left_info.meta["meta"]}
+                        res_image_meta["right"] = {"image_id": right_info.id, "data": right_info.meta["meta"]}
                     elif state["mergeMetadata"] == "use left":
-                        res_image_meta = left_info.meta
+                        res_image_meta = left_info.meta["meta"]
                     elif state["mergeMetadata"] == "use right":
-                        res_image_meta = right_info.meta
+                        res_image_meta = right_info.meta["meta"]
                     metas[image_name] = res_image_meta
 
                 #uplaod images for matched pairs
                 uploaded_images = None
                 for dataset_id in image_ids.keys():
+                    _metas = [metas[image_name] for image_name in image_names[dataset_id]]
+                    _progress_callback = lambda count: _increment_progress(api, task_id, progress_img, count)
                     uploaded_images = api.image.upload_ids(res_dataset.id, image_names[dataset_id], image_ids[dataset_id],
-                                                           metas=[metas[image_name] for image_name in image_names[dataset_id]],
-                                                           progress_cb=lambda count: _increment_progress(api, task_id, progress, count))
+                                                           metas=_metas, progress_cb=_progress_callback)
                     break
                 uploaded_ids = {info.name: info.id for info in uploaded_images}
 
@@ -369,16 +378,11 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
                     # upload annotations
                     api.annotation.upload_anns(batch_res_image_ids, anns)
-
-                    _increment_progress(api, task_id, progress, len(anns))
+                    _increment_progress(api, task_id, progress_ann, len(anns))
 
             elif message == "conflicts":
                 #["unify", "intersect"]
-                if state["merge"] == "intersect":
-                    _increment_progress(api, task_id, progress)
-                    continue
-                if state["resolve"] == "skip image":
-                    _increment_progress(api, task_id, progress)
+                if state["merge"] == "intersect" or state["resolve"] == "skip image":
                     continue
                 elif state["resolve"] == "use left":
                     res_dataset = _add_simple(res_dataset, images, left_ds)
@@ -389,15 +393,13 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
             elif message == "unique (right)" or message == 'new dataset (right)':
                 res_dataset = _add_simple(res_dataset, images, right_ds)
 
-        _increment_progress(api, task_id, progress)
-
     fields = [
         {"field": "data.createdProjectId", "payload": result_project.id},
         {"field": "data.createdProjectName", "payload": result_project.name},
     ]
     api.app.set_fields(task_id, fields)
     app_logger.info("Project is created", extra={'project_id': result_project.id, 'project_name': result_project.name})
-    #api.task.set_output_project(task_id, res_project.id, res_project.name)
+    api.task.set_output_project(task_id, result_project.id, result_project.name)
     my_app.stop()
 
 
