@@ -344,7 +344,7 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
                             tags = left_ann.img_tags.merge(right_ann.img_tags)
                         elif state["mergeTags"] == "use left":
                             tags = left_ann.img_tags
-                        elif state["mergeMetadata"] == "use right":
+                        elif state["mergeTags"] == "use right":
                             tags = right_ann.img_tags
                         if tags is None:
                             raise RuntimeError("Merge image tags: failed")
