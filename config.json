@@ -22,5 +22,6 @@
   "task_location": "application_sessions",
   "isolate": true,
   "icon": "https://i.imgur.com/DEUcdnP.png",
-  "icon_background": "#FFFFFF"
+  "icon_background": "#FFFFFF",
+  "poster": "https://i.imgur.com/vfDDYqh.png"
 }
