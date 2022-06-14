@@ -1,11 +1,12 @@
 import os
 import time
 from collections import defaultdict
-import supervisely_lib as sly
+import supervisely as sly
+from supervisely.app.v1.app_service import AppService
 
 # ignore_task_id=True allows to access data in different workspaces with the same API object.
 # It is disabled by default to protect data from other workspaces
-my_app = sly.AppService(ignore_task_id=True)
+my_app = AppService(ignore_task_id=True)
 
 TEAM_ID = int(os.environ['context.teamId'])
 WORKSPACE_ID = int(os.environ['context.workspaceId'])
