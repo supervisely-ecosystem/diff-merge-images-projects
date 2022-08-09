@@ -1,5 +1,6 @@
-<div align="center" markdown>
-<img src="https://i.imgur.com/vfDDYqh.png"/>
+<div align="center" markdown>!
+
+<img src="https://user-images.githubusercontent.com/106374579/183656137-70a107a9-4497-40be-8e21-1a2c9d8d98f1.png"/>
 
 # Diff Merge Two Images Projects
 
