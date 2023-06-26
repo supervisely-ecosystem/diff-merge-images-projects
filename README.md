@@ -22,7 +22,7 @@
 
 Visually compare and merge two images projects: datasets / images / image tags / labels / image metadata. Define how to merge them and how to resolve conflicts. 
 
-<img src="https://i.imgur.com/qTnXLaC.png"/>
+<img src="media/ov.png"/>
 
 ## How To Use
 
@@ -32,7 +32,7 @@ Visually compare and merge two images projects: datasets / images / image tags /
 
 **Step 2:** Run app from the `Apps` page of current team. Choose two projects to compare and merge
 
-<img src="https://i.imgur.com/WkLZ05w.png" width="500px"/>
+<img src="media/htr2.png" width="500px"/>
 
 **Step 3:** Explore comparison table, define merge options and press `Run` button.
 
