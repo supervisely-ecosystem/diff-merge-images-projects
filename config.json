@@ -7,7 +7,7 @@
     "data operations"
   ],
   "description": "Visual diff and merge tool helps compare images in two projects",
-  "docker_image": "supervisely/base-py-sdk:6.35.0",
+  "docker_image": "supervisely/base-py-sdk:6.72.70",
   "instance_version": "6.4.57",
   "main_script": "src/main.py",
   "modal_template": "src/modal.html",
