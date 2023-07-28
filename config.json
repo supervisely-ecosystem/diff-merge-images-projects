@@ -1,29 +1,29 @@
 {
-  "name": "Diff and Merge Images Projects",
-  "type": "app",
-  "categories": [
-    "images",
-    "project management",
-    "data operations"
-  ],
-  "description": "Visual diff and merge tool helps compare images in two projects",
-  "docker_image": "supervisely/base-py-sdk:6.72.70",
-  "instance_version": "6.4.57",
-  "main_script": "src/main.py",
-  "modal_template": "src/modal.html",
-  "modal_width": 585,
-  "modal_template_state": {
-    "teamId1": null,
-    "workspaceId1": null,
-    "projectId1": null,
-    "teamId2": null,
-    "workspaceId2": null,
-    "projectId2": null
-  },
-  "gui_template": "src/gui.html",
-  "task_location": "application_sessions",
-  "isolate": true,
-  "icon": "https://i.imgur.com/DEUcdnP.png",
-  "icon_background": "#FFFFFF",
-  "poster": "https://user-images.githubusercontent.com/106374579/183656137-70a107a9-4497-40be-8e21-1a2c9d8d98f1.png"
+    "name": "Diff and Merge Images Projects",
+    "type": "app",
+    "categories": [
+        "images",
+        "project management",
+        "data operations"
+    ],
+    "description": "Visual diff and merge tool helps compare images in two projects",
+    "docker_image": "supervisely/data-operations:0.0.3",
+    "instance_version": "6.4.57",
+    "main_script": "src/main.py",
+    "modal_template": "src/modal.html",
+    "modal_width": 585,
+    "modal_template_state": {
+        "teamId1": null,
+        "workspaceId1": null,
+        "projectId1": null,
+        "teamId2": null,
+        "workspaceId2": null,
+        "projectId2": null
+    },
+    "gui_template": "src/gui.html",
+    "task_location": "application_sessions",
+    "isolate": true,
+    "icon": "https://i.imgur.com/DEUcdnP.png",
+    "icon_background": "#FFFFFF",
+    "poster": "https://user-images.githubusercontent.com/106374579/183656137-70a107a9-4497-40be-8e21-1a2c9d8d98f1.png"
 }
