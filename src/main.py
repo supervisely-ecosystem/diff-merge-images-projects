@@ -238,8 +238,8 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
             image_names.append(info.name)
             image_metas.append(info.meta["meta"])
 
-        progress_img = sly.Progress(f"Images", len(images) / 2)
-        progress_ann = sly.Progress(f"Annotations", len(images) / 2)
+        progress_img = sly.Progress(f"Images", len(images))
+        progress_ann = sly.Progress(f"Annotations", len(images))
         _progress_callback = lambda count: _increment_progress(api, task_id, progress_img, count)
 
         if res_dataset is None:
@@ -272,8 +272,8 @@ def merge(api: sly.Api, task_id, context, state, app_logger):
 
             # "matched", "conflicts", "unique (left)", "unique (right)"
             if message == "matched":
-                progress_img = sly.Progress(f"Images", len(images) / 2)
-                progress_ann = sly.Progress(f"Annotations", len(images) / 2)
+                progress_img = sly.Progress(f"Images", len(images))
+                progress_ann = sly.Progress(f"Annotations", len(images))
                 _increment_progress(api, task_id, progress_img)
 
                 left_ds_id = api.dataset.get_info_by_name(PROJECT1.id, left_ds).id
