@@ -10,11 +10,11 @@
 </p>
 
 
-[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/diff-merge-images-projects)
-[![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
+[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervisely.com/apps/diff-merge-images-projects)
+[![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervisely.com/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/diff-merge-images-projects)
-[![views](https://app.supervise.ly/img/badges/views/supervisely-ecosystem/diff-merge-images-projects.png)](https://supervise.ly)
-[![runs](https://app.supervise.ly/img/badges/runs/supervisely-ecosystem/diff-merge-images-projects.png)](https://supervise.ly)
+[![views](https://app.supervisely.com/img/badges/views/supervisely-ecosystem/diff-merge-images-projects.png)](https://supervisely.com)
+[![runs](https://app.supervisely.com/img/badges/runs/supervisely-ecosystem/diff-merge-images-projects.png)](https://supervisely.com)
 
 </div>
 
@@ -28,7 +28,7 @@ Visually compare and merge two images projects: datasets / images / image tags /
 
 **Step 1:** Add app to your team from Ecosystem if it is not there
 
-**Step 2:** Please, firstly use [`Diff Merge Project Meta`](https://ecosystem.supervise.ly/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
+**Step 2:** Please, firstly use [`Diff Merge Project Meta`](https://ecosystem.supervisely.com/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
 
 **Step 2:** Run app from the `Apps` page of current team. Choose two projects to compare and merge
 
