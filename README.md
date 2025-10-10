@@ -10,7 +10,7 @@
 </p>
 
 
-[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervisely.com/apps/diff-merge-images-projects)
+[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](../../../../supervisely-ecosystem/diff-merge-images-projects)
 [![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervisely.com/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/diff-merge-images-projects)
 [![views](https://app.supervisely.com/img/badges/views/supervisely-ecosystem/diff-merge-images-projects.png)](https://supervisely.com)
@@ -28,7 +28,7 @@ Visually compare and merge two images projects: datasets / images / image tags /
 
 **Step 1:** Add app to your team from Ecosystem if it is not there
 
-**Step 2:** Please, firstly use [`Diff Merge Project Meta`](https://ecosystem.supervisely.com/apps/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
+**Step 2:** Please, firstly use [`Diff Merge Project Meta`](../../../../supervisely-ecosystem/diff-merge-project-meta) app to merge project metas: classes and tags. As a result empty project with merged classes and tags will be created. This project should be used as a result project for current application. 
 
 **Step 2:** Run app from the `Apps` page of current team. Choose two projects to compare and merge
 
